@@ -205,7 +205,6 @@ def get_next_feature (subset_data, features):
     # Return the Attribute Name and Column index
     info_gain_per_column = information_gain_all_columns (subset_data, features)
     next_col_index = np.argmax (info_gain_per_column)
-    print ("Selected Column : ", next_col_index, "Feature len :", len (features))
     return next_col_index, features[next_col_index] 
 
 def get_row_subset(data, col_index, attribute_value):

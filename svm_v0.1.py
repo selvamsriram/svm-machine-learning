@@ -67,12 +67,12 @@ def train_and_test_svm (train_filename, test_filename, no_of_columns, W, C,
     precision = 0
 
   if (true_positive != 0) and (false_negative != 0):
-    recall    = (true_positive/(true_positive+false_negative))
+    recall = (true_positive/(true_positive+false_negative))
   else:
     recall = 0
 
   if (precision != 0) and (recall != 0):
-    F1        = 2 * ((precision * recall) / (precision + recall))
+    F1 = 2 * ((precision * recall) / (precision + recall))
   else:
     F1 = 0
   print ("                  Precision : ", precision, "Recall : ", recall, "F1 : ", F1)
@@ -181,7 +181,7 @@ def train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs,
   print ("Cross validation results ")
   print ("   Best Learning Rate  : ", best_l_rate)
   print ("   Best tradeof Param  : ", best_C)
-  print ("   Yielded F1          : ", f1)
+  print ("   Yielded F1          : ", best_f1)
   # Re-init for future use
   best_f1 = 0
   best_epoch = 0
@@ -189,7 +189,7 @@ def train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs,
   best_recall = 0
   best_w = np.zeros(no_of_columns - 1)
 
-  print ("Development set results")
+  print ("Test results")
   #Train for each epoch and test in development data for each of them and measure accuracy
   for i in range (1, 21):
     new_W, precision, recall, f1 = train_and_test_svm ('train.liblinear', 'test.liblinear', no_of_columns,
@@ -250,18 +250,16 @@ def main_function (seed_value):
   no_of_columns   = 220
   np.random.seed (seed_value)
   W               = np.zeros (no_of_columns-1)
-  epochs          = 10 
+  epochs          = 20 
   precision       = 0
   learn_rates     = [1, 0.1, 0.01, 0.001, 0.0001]
   tradeoff_params = [10, 1, 0.1, 0.01, 0.001, 0.0001]
 
-  '''
   print ("******************Basic SVM Start *******************")
   print ("******************Seed Value", seed_value, "*******************")
   precision = train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs, no_of_columns, W)
   print ("******************Basic SVM End *********************")
   return precision 
-  '''
 
   '''
   # Bagging

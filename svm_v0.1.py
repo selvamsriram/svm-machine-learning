@@ -1,6 +1,7 @@
 import copy
 import math
 import numpy as np
+import decision_tree as dtree
 
 # Peceptron Tester Function
 #--------------------------------------------------------------------------------------------------
@@ -23,7 +24,7 @@ def svm_test(X, Y, W):
       if (Y[i,0] > 0):
         true_positive += 1
 
-  print ("Total Mistakes : ", mistakes)
+  print ("                  Total Mistakes : ", mistakes)
   return true_positive, false_positive, false_negative
 
 # Perceptron Learner Function
@@ -51,14 +52,15 @@ def svm_invoke(X, Y, W, C, l_rate, epochs, count_corrections):
 #--------------------------------------------------------------------------------------------------
 def train_and_test_svm (train_filename, test_filename, no_of_columns, W, C,
                         l_rate, epochs, count_corrections):
-  print (train_filename, test_filename, no_of_columns, C, l_rate, epochs)
+  print ("")
+  print ("Train File : ", train_filename, "Test File : ", test_filename, "Trade off : ", C, "Learn Rate : ", l_rate, "Epoch : ", epochs)
   X, Y = data_in_x_y_format (train_filename, no_of_columns)
   new_W = svm_invoke(X, Y, W, C, l_rate, epochs, count_corrections)
 
   X, Y = data_in_x_y_format (test_filename, no_of_columns)
   true_positive, false_positive, false_negative = svm_test (X, Y, new_W)
 
-  print (true_positive, false_positive, false_negative)
+  print ("                  True +ve : ", true_positive, "False +ve : ", false_positive, "False -ve : ", false_negative)
   if (true_positive != 0) and (false_positive != 0):
     precision = (true_positive/(true_positive+false_positive))
   else:
@@ -69,11 +71,11 @@ def train_and_test_svm (train_filename, test_filename, no_of_columns, W, C,
   else:
     recall = 0
 
-  print (precision, recall)
   if (precision != 0) and (recall != 0):
     F1        = 2 * ((precision * recall) / (precision + recall))
   else:
     F1 = 0
+  print ("                  Precision : ", precision, "Recall : ", recall, "F1 : ", F1)
   return new_W, precision, recall, F1 
 
 # Utility Function
@@ -83,6 +85,32 @@ def file_len(fname):
     for i, l in enumerate(f):
       pass
   return i + 1
+
+# Utility Function
+#--------------------------------------------------------------------------------------------------
+def get_data_and_features (filename, no_of_columns):
+  no_of_rows = file_len (filename)
+  data = np.zeros ((no_of_rows, no_of_columns))
+
+  row_no = 0
+  with open(filename) as f:
+    for line in f:
+      words = line.split()
+      start = 1
+      for word in words:
+        if  start == 1:
+          start = 0
+          data[row_no][0] = int (word)
+        else:
+          parts = word.split(':')
+          column = int (parts[0])
+          value = float (parts[1])
+          data[row_no][column] = value
+      row_no += 1
+
+  X = data
+  Y = list (range (0,220))
+  return X, Y
 
 # Utility Function
 #--------------------------------------------------------------------------------------------------
@@ -157,6 +185,8 @@ def train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs,
   # Re-init for future use
   best_f1 = 0
   best_epoch = 0
+  best_precision = 0
+  best_recall = 0
   best_w = np.zeros(no_of_columns - 1)
 
   print ("Development set results")
@@ -168,6 +198,8 @@ def train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs,
 
     if (f1 > best_f1):
       best_f1 = f1 
+      best_precision = precision
+      best_recall = recall
       best_epoch = i
       best_w = copy.deepcopy (new_W)
 
@@ -218,17 +250,56 @@ def main_function (seed_value):
   no_of_columns   = 220
   np.random.seed (seed_value)
   W               = np.zeros (no_of_columns-1)
-  epochs          = 2 
+  epochs          = 10 
   precision       = 0
   learn_rates     = [1, 0.1, 0.01, 0.001, 0.0001]
   tradeoff_params = [10, 1, 0.1, 0.01, 0.001, 0.0001]
 
+  '''
   print ("******************Basic SVM Start *******************")
   print ("******************Seed Value", seed_value, "*******************")
   precision = train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs, no_of_columns, W)
   print ("******************Basic SVM End *********************")
   return precision 
+  '''
 
+  '''
+  # Bagging
+  X, features = get_data_and_features ("train.liblinear", no_of_columns)
+  randomize = np.arange (X.shape[0])
+
+  dtree_list = []
+  for i in range (0, 200):
+    np.random.shuffle(randomize)
+    X = X[randomize]
+    sample = X[0:200]
+    print ("Dtree", i, "X : ", X.shape[1], "Features", len (features))
+    root = dtree.add_node (sample, features, 0, 10)
+    dtree_list.append(root)
+
+  
+  # Construct transformed features
+  X, features = get_data_and_features ("train.liblinear", no_of_columns)
+  no_of_rows = X.shape[0]
+
+  no_of_rows = file_len ("train.liblinear")
+  no_of_columns = 201
+  transformed_data = np.zeros ((no_of_rows, no_of_columns))
+
+  index_column_dict = dict(enumerate(features))
+  column_index_dict = {v: k for k, v in index_column_dict.items()}
+  for i in range (0, no_of_rows):
+    transformed_data[i][0] = X[i][0]
+    for j in range (0, 200):
+      root = dtree_list[j]
+      id3_result = dtree.test_dtree_per_row (root, X[i], index_column_dict, column_index_dict)
+      transformed_data[i][1+j] = id3_result
+
+  print (transformed_data)
+  transformed_data.dump ("transformed_data.txt")
+  readback = np.load ("transformed_data.txt")
+  print (readback)
+  '''
 
 # Start of operation
 main_function (1)

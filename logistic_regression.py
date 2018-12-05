@@ -25,6 +25,10 @@ def logistic_regression_test(X, Y, W):
         true_positive += 1
 
   print (" Mistakes   : ", mistakes)
+  if (mistakes == 0):
+    true_positive = 0
+    false_positive = 0
+    false_negative = 0
   return true_positive, false_positive, false_negative
 
 # Perceptron Learner Function
@@ -34,10 +38,10 @@ def logistic_regression_invoke(X, Y, W, tradeoff, l_rate, epochs, count_correcti
   cols = X.shape[1]
   rows = X.shape[0]
   for t in range(0, epochs):
-#    randomize = np.arange (X.shape[0])
-#    np.random.shuffle(randomize)
-#    X = X[randomize]
-#    Y = Y[randomize]
+    randomize = np.arange (X.shape[0])
+    np.random.shuffle(randomize)
+    X = X[randomize]
+    Y = Y[randomize]
     rate = (l_rate/(1+t))
 
     for i in range (0, rows):
@@ -184,7 +188,6 @@ def cross_validation (kfold, C, l_rate, epochs, no_of_columns, W, fname_partial)
 #--------------------------------------------------------------------------------------------------
 def train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs,
                                   no_of_columns, W):
-  '''
   best_f1 = 0
   for C in tradeoff_params:
     for l_rate  in learn_rates:
@@ -205,7 +208,6 @@ def train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs,
   print ("   Best tradeof Param  : ", best_tradeoff)
   print ("   Yielded F1          : ", best_f1)
   print ("#############################################")
-  '''
   # Re-init for future use
   best_f1 = 0
   best_epoch = 0
@@ -215,11 +217,9 @@ def train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs,
   
   print ("Test results")
   #Train for each epoch and test in development data for each of them and measure accuracy
-  for i in range (1, 2):
+  for i in range (1, 20):
     print ("")
     print (" Epoch      :", i)
-    best_tradeoff = 10
-    best_l_rate = 1
     new_W, precision, recall, f1 = train_and_test_logistic_regression ('train.liblinear', 'test.liblinear', no_of_columns,
                                                    W, best_tradeoff, best_l_rate, i, 0)
     print (" Precision  : ", precision)
@@ -242,13 +242,11 @@ def train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs,
 # Main Function Starts here 
 #--------------------------------------------------------------------------------------------------
 def main_function (seed_value):
-  train_file      = "train.liblinear"
-  test_file       = "test.liblinear"
   kfold           = 5
   no_of_columns   = 220
   np.random.seed (seed_value)
   W               = np.zeros (no_of_columns-1)
-  epochs          = 5 
+  epochs          = 10 
   precision       = 0
   learn_rates     = [1, 0.1, 0.01, 0.001, 0.0001, 0.00001]
   tradeoff_params = [0.1, 1, 10, 100, 1000, 10000]

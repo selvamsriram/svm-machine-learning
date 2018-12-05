@@ -56,6 +56,8 @@ def train_and_test_svm (train_filename, test_filename, no_of_columns, W, C,
 
   if ("trans_" in test_filename):
     transformed = True
+  else:
+    transformed = False
 
   # Separate data handlers for transformed and non transformed data
   if (transformed == True):
@@ -422,12 +424,12 @@ def main_function (seed_value):
 
   print ("******************Basic SVM Start *******************")
   print ("******************Seed Value", seed_value, "*******************")
-  #precision = train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs, no_of_columns, W)
+  precision = train_test_request_processor (kfold, learn_rates, tradeoff_params, epochs, no_of_columns, W)
   print ("******************Basic SVM End *********************")
 
   # Random Forest data collection
   # SVM over trees
-  svm_over_trees (train_file, test_file, sample_size, no_of_dtrees, depths, kfold, learn_rates, tradeoff_params, epochs, no_of_columns, W)
+  #svm_over_trees (train_file, test_file, sample_size, no_of_dtrees, depths, kfold, learn_rates, tradeoff_params, epochs, no_of_columns, W)
   return precision 
 
 

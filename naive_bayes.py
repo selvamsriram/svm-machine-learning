@@ -112,26 +112,103 @@ def predict_per_row (X, Y, lamda, unique_lables, label_prob_dict, label_count, f
       best_label = label
 
   return best_label
+
 def test_naive_bayes (X, Y, lamda, label_prob_dict, label_count, feature_data_list):
   no_of_rows = X.shape[0]
   unique_lables = np.unique (X[:, 0])
+  true_positive = 0
+  false_positive = 0
+  false_negative = 0
   mistakes = 0
+  
   for i in range (0, no_of_rows):
     predicted_label = predict_per_row (X[i], Y, lamda, unique_lables, label_prob_dict, label_count, feature_data_list)
     if (predicted_label != X[i][0]):
       mistakes += 1
+      if (X[i,0] > 0):
+        false_negative += 1
+      else:
+        false_positive += 1
+    else:
+      if (X[i][0] > 0):
+        true_positive += 1
 
-  print ("Number of mistakes : ", mistakes)
+  if (true_positive != 0) or (false_positive != 0):
+    precision = (true_positive/(true_positive+false_positive))
+  else:
+    precision = 0
 
-def main_func ():
-  lamda = 1
+  if (true_positive != 0) or (false_negative != 0):
+    recall = (true_positive/(true_positive+false_negative))
+  else:
+    recall = 0
 
-#  X, Y = data_in_x_y_format ("tennis.data", 6)
-  X, Y = data_in_x_y_format ("train.liblinear", 220)
+  if (precision != 0) or (recall != 0):
+    F1 = 2 * ((precision * recall) / (precision + recall))
+  else:
+    F1 = 0
+  print (" Mistakes   : ", mistakes)
+  print (" Precision  : ", precision)
+  print (" Recall     : ", recall)
+  print (" F Value    : ", F1)
+  print ("")
+
+  return true_positive, false_positive, false_negative, precision, recall, F1
+
+def train_and_test_nb (train_file, test_file, lamda, no_of_columns):
+  X, Y = data_in_x_y_format (train_file, no_of_columns)
   unique_labels, label_prob_dict, label_count = get_prior_label_prob (X, Y)
   feature_data_list = compute_likelihood_of_features (X, Y)
  
-  X, Y = data_in_x_y_format ("test.liblinear", 220)
-  test_naive_bayes (X, Y, lamda, label_prob_dict, label_count, feature_data_list)
+  X, Y = data_in_x_y_format (test_file, no_of_columns)
+  true_positive, false_positive, false_negative, precision, recall, F1  = test_naive_bayes (X, Y, lamda, label_prob_dict, label_count, feature_data_list)
+  return true_positive, false_positive, false_negative, precision, recall, F1
+
+ 
+def cross_validation (kfold, lamda, fname_partial, no_of_columns):
+  consolidated_F1 = 0
+  for i in range (0, kfold):
+    training_filenames = []
+    temp_arr_start = True
+
+    for j in range (0, kfold):
+      if (i != j):
+        training_filenames.append (fname_partial + str(j)+'.data')
+
+    with open ('temporary.data', 'w') as temp_file:
+      for fname  in training_filenames:
+        with open(fname) as iterfile:
+          for line in iterfile:
+            temp_file.write (line)
+
+    #Cross Validation Training
+    true_positive, false_positive, false_negative, precision, recall, F1 = train_and_test_nb ('temporary.data', fname_partial+str(i)+'.data', lamda, no_of_columns) 
+    consolidated_F1 += F1
+  return (consolidated_F1/kfold)
+
+def naive_bayes_train_test (train_file, test_file, lamdas, kfold, no_of_columns):
+  best_f1 = 0
+
+  for lamda in lamdas:
+    f1 = cross_validation (kfold, lamda, "training0", no_of_columns)
+    if f1 > best_f1:
+      best_f1 = f1
+      best_lamda = lamda
+  
+  print ("#############################################")
+  print ("Cross validation results ")
+  print ("   Best Lamda          : ", best_lamda)
+  print ("   Yielded F1          : ", best_f1)
+  print ("#############################################")
+
+  true_positive, false_positive, false_negative, precision, recall, F1 = train_and_test_nb (train_file, test_file, best_lamda, no_of_columns) 
+def main_func ():
+  kfold          = 5
+  lamdas         = [2, 1.5, 1, 0.5]
+  no_of_columns  = 220
+  train_file     = "train.liblinear"
+  test_file      = "test.liblinear"
+
+  naive_bayes_train_test (train_file, test_file, lamdas, kfold, no_of_columns)
 
 main_func ()
